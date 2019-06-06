@@ -1,0 +1,217 @@
+---
+title: "Early Blindness Shapes Cortical Representations of Auditory Frequency within Primary Auditory Cortex"
+author: "Kelly Chang"
+date: "6/4/2019"
+runtime: shiny
+output: 
+  ioslides_presentation:
+    widescreen: true
+    css: presentation.css
+---
+
+```{r setup, include = FALSE}
+rm(list = ls())
+library(shiny)
+library(latex2exp)
+library(tidyverse)
+library(ggbeeswarm)
+```
+
+## Background {.columns-2}
+
+> - Human primary auditory cortex (PAC) is tonotopically organized
+
+<br>
+
+> - Tonotopic organization refers to the systematic spatial arrangement of frequencies representation within auditory cortices
+
+<p class="forceBreak"></p>
+
+<div class="build">
+```{r image1, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("./Figures/Image1.png", dpi = 300)
+```
+</div>
+
+## Research Question
+
+> - <font size="36">Does frequency representation in human primary auditory cortex change due to environmental circumstances?</font>
+
+<br>
+
+> - Does long-term sensory deprivation of one modality (i.e., vision) affect the cortical sensory representation of another modality (i.e., audition)
+
+## Dataset Composition
+
+> - 2 Subject Groups:
+>     - 13 **Early Blind** (EB; 8 congenital, 5 anophthalmic) 
+>     - 17 **Sighted Controls** (SC)
+
+> - 2 Sites:
+>     - University of Oxford (7T)
+>     - University of Washington (3T)
+
+> - 2 Stimulus Types:
+>     - Moving auditory sweeps
+>     - Static pure tone bursts
+
+## The Brain as a Linear System {.column2}
+
+<div class=column-left-math>
+<div class=build>
+<p>Terminology:</p>
+</div>
+
+> 1. Input, $X_{n}$ 
+> 2. Operator, $H()$
+> 3. Output, $Y_{n}$
+
+</div>
+
+<div class=column-right-math>
+
+<br>
+
+<div class=build>
+$$
+Y = H(X)
+$$
+</div>
+
+<br>
+
+<div class=build>
+$$ 
+Y_{1} + Y_{2} = H(X_{1}) + H(X_{2})
+$$
+</div>
+</div>
+
+***
+
+```{r linear_gui, echo = FALSE}
+shinyAppDir(appDir = "./Linear",
+            options = list(width = 1920, height = 1080)
+)
+```
+
+## Population Receptive Field (pRF) Modeling
+
+<br>
+
+> - Frequency selectivity or tuning as a 1D Gaussian in log frequency space
+
+<br>
+
+> - 1D Gaussian has 3 parameters: center ($\mu$), spread ($\sigma$), and amplitude ($a$)
+
+***
+
+```{r prf_gui, echo = FALSE}
+shinyAppDir(appDir = "./pRF",
+            options = list(width = 1920, height = 1080)
+)
+```
+
+## Measures Obtained from the pRF Model
+
+<div class=build>
+<div class=column-left>
+```{r amp_example_figure, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 6}
+load("./Figures/Figure3.RData")
+data %>% 
+  ggplot(aes(x = freq, y = y, color = amp)) + 
+  scale_x_continuous(name = "Frequency (Hz)", trans = "log10",
+                     expand = c(0.1, 0.1)) +
+  scale_y_continuous(name = "Response", breaks = c(0, 0.5, 1)) + 
+  scale_color_manual(values = c("purple", "goldenrod1")) +
+  geom_line(size = 2) + 
+  theme_classic(base_size = 20) + 
+  theme(legend.position = "none") + 
+  ggtitle("Amplitude")
+```
+</div>
+</div>
+
+<div class=build>
+<div class=column-right>
+```{r sigma_example_figure, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 6}
+load("./Figures/Figure4.RData")
+data %>% 
+  ggplot(aes(x = freq, y = y, color = q)) + 
+  scale_x_continuous(name = "Frequency (Hz)", trans = "log10", 
+                     expand = c(0.1, 0.1)) +
+  scale_y_continuous(name = "Response", breaks = c(0, 0.5, 1)) + 
+  scale_color_manual(values = c("purple", "goldenrod1")) +
+  geom_line(size = 2) + 
+  theme_classic(base_size = 20) + 
+  theme(legend.position = "none") + 
+  ggtitle(TeX("Tuning Width: $Q =\\frac{\\mu}{\\sigma}$")) 
+```
+</div>
+</div>
+
+## Amplitude Response within PAC
+
+<div class=build>
+```{r amp_figure, echo = FALSE, fig.align = "center", fig.width = 13, fig.height = 7}
+load("./Figures/Figure1.RData")
+thr_data %>%
+  ggplot(aes(x = amp, fill = subjGroup) ) +
+  geom_density(color = NA, alpha = 0.75, position = "stack") +
+  geom_vline(data = hline_data, size = 1, 
+             mapping = aes(xintercept = mAmp, color = group)) + 
+  scale_x_continuous(name = "Amplitude", trans = "log2") + 
+  scale_y_continuous(name = "Density") +
+  scale_fill_manual(values = c(blues(n_blind), reds(n_control))) +
+  scale_color_manual(values = c(reds(1), blues(1))) +
+  facet_grid(group ~ dataset) +
+  theme_classic(base_size = 20) + 
+  theme(legend.position = "none")
+```
+</div>
+
+## Tuning Widths with PAC
+
+<div class=build>
+```{r q_figure, echo = FALSE, fig.align = "center", fig.width = 13, fig.height = 7}
+load("./Figures/Figure2.RData")
+m_data %>% 
+  ggplot(aes(x = hemi, y = mQ, color = group)) +
+  scale_x_discrete(name = "Hemisphere") + 
+  scale_y_continuous(name = "Average Q", limits = c(0, 1)) + 
+  scale_color_brewer(name = "Group", palette = "Set1") +
+  geom_violin(fill = NA, alpha = 0.25) +
+  geom_beeswarm(shape = 20, size = 5, alpha = 0.5, dodge.width = 0.9) +
+  geom_segment(data = seg_data, mapping = aes(x = x-0.2, xend = x+0.2, y = y, yend = y),
+               size = 4) +
+  facet_wrap(~dataset) + 
+  theme_classic(base_size = 20) +
+  theme(legend.position = c(0.9, 0.88),
+        legend.background = element_blank())
+```
+</div>
+
+## Conclusions
+
+> <ul>
+<li>Decreased response amplitudes in Early Blind vs. Sighted Control subjects</li>
+<ul>
+<li>Potentially due to increased "*efficiency*" of processing within PAC or recruitment of reorganized occipital cortex <font size="4">(Jiang et al., 2014)</font></li>
+</ul>
+</ul>
+
+<br>
+
+> <ul>
+<li>Early Blind subjects had significantly narrower voxel-wise tuning for auditory frequencies within PAC vs. Sighted Control subjects</li>
+<ul>
+<li>Evidence supporting cortical plasticity in a primary sensory cortices due to sensory depreviation or increased task demand</li>
+</ul>
+</ul>
+
+***
+
+<div class="question">
+**Questions?**
+</div>
